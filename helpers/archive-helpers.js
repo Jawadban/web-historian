@@ -25,17 +25,74 @@ exports.initialize = function(pathsObj) {
 // The following function names are provided to you to suggest how you might
 // modularize your code. Keep it clean!
 
-exports.readListOfUrls = function() {
+var arrayList = [];
+
+exports.readListOfUrls = function(callback) {
+  fs.readFile(exports.paths.list, 'utf8', function (error, data) {
+    if (error) {
+      throw error;
+    }
+    callback(error, data.split('/n'));
+    //console.log(data);
+  });
 };
 
-exports.isUrlInList = function() {
+exports.isUrlInList = function(url, callback) {
+  exports.readListOfUrls(function(error, data) {
+    if (data.indexOf(url) >= 0) {
+      callback(error, true, data);
+    } else {
+      callback(error, false, data);
+    }
+
+  });
+};
+  // websitesInStorage.map(function(website) {
+  //   (website === req.url) {
+
+  //   }
+  // });
+// };
+//fs.appendFile
+exports.addUrlToList = function(url, callback) {
+  exports.isUrlInList(function(error, isIn, data) {
+    if (!isIn) {
+      data.push(url);
+      fs.writeFile(exports.path.list, data.join('/n'), function(error) {
+        if (error) {
+          throw error;
+        }
+        callback(error, isIn); 
+      });
+    }
+  });
 };
 
-exports.addUrlToList = function() {
+//fs.readDir
+exports.isUrlArchived = function(url, callback) {
+  fs.readFile(exports.paths.archivedSites + '/' + url, 'utf8', function(error, data) {
+    if (error) {
+      callback(error, false);
+    } else {
+      callback(error, true);
+    }
+  });
 };
 
-exports.isUrlArchived = function() {
-};
-
-exports.downloadUrls = function() {
+exports.downloadUrls = function(urls) {
+  //get all urls in sites.txt
+  //get all urls in archive
+  //download all urls in sites.txt not in archives
+  urls.forEach(function(url) {
+    http.request({host: url}, function(response) {
+      var site = '';
+      response.on('data', function(chunk) {
+        site += chunk;
+      });
+      response.on('end', function() {
+        fs.writeFile(exports.paths.archivedSites + '/' + url, site);
+      });
+    });
+    http.end();
+  });
 };
